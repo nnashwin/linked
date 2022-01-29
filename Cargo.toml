@@ -1,6 +1,6 @@
 [package]
 name = "linked"
-description = "Store and access important links on demand"
+description = "Store and access important links from the command line"
 license = "GPL3"
 readme = "readme.md"
 version = "0.1.0"
