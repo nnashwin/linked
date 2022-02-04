@@ -2,13 +2,15 @@ extern crate anyhow;
 extern crate clap;
 extern crate dirs;
 
+mod data;
+
 use anyhow::{anyhow, Result};
 use clap::{arg, App, AppSettings, ArgMatches};
+use data::*;
 use dirs::home_dir;
 use std::{
     collections::HashMap,
     fs::{self, File, OpenOptions},
-    io::{Read, Write},
     path::PathBuf,
 };
 
@@ -57,35 +59,13 @@ fn create_cli_config(cli_dir_name: &str) -> Result<PathBuf> {
     Ok(path)
 }
 
-fn read_links(mut file: File) -> Result<HashMap<String, String>> {
-    let metadata = file.metadata()?;
-    if metadata.len() == 0 {
-        Ok(HashMap::new())
-    } else {
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-
-        let key_values: HashMap<String, String> = serde_json::from_str(&contents)?;
-
-        Ok(key_values)
-    }
-}
-
-fn write_links_to_file(f: &mut File, links: HashMap<String, String>) -> Result<()> {
-    let links_str = serde_json::to_string(&links)?;
-    f.write_all(links_str.as_bytes())
-        .expect("Unable to write updated links data to the file");
-
-    Ok(())
-}
-
 fn run(args: ArgMatches) -> Result<()> {
     let mut root_dir = create_cli_config(APP_NAME)?;
     root_dir.push(LINKS_FILE_NAME);
 
     // sets write and read to true because we want to create if not found and create needs both
     // properties
-    let links_read_file = fs::OpenOptions::new()
+    let links_read_file = OpenOptions::new()
         .create(true)
         .write(true)
         .read(true)
