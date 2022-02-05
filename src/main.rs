@@ -1,11 +1,13 @@
 extern crate anyhow;
 extern crate clap;
+extern crate copypasta;
 extern crate dirs;
 
 mod data;
 
 use anyhow::{anyhow, Result};
 use clap::{arg, App, AppSettings, ArgMatches};
+use copypasta::{ClipboardContext, ClipboardProvider};
 use data::*;
 use dirs::home_dir;
 use std::{
@@ -92,10 +94,21 @@ fn run(args: ArgMatches) -> Result<()> {
             }
         }
         Some(("get", sub_matches)) => {
-            println!(
-                "getting link with abbr '{}'",
-                sub_matches.value_of("LINK_ABBR").expect("required")
-            )
+            let abbrev = sub_matches
+                .value_of("LINK_ABBR")
+                .expect("The link abbreviation was not provided");
+
+            println!("abbrev: {}", abbrev);
+
+            match key_values.get(&abbrev.to_string()) {
+                Some(link) => {
+                    let mut ctx = ClipboardContext::new().unwrap();
+                    ctx.set_contents(link.to_owned()).unwrap();
+                    println!("the link for '{}': '{}' was saved to your clipboard", abbrev, link);
+
+                },
+                _ => println!("no link exists for the abbreviation '{}'\n Check to make sure the abbreviation exists and try again.", &abbrev.to_string()),
+            }
         }
         None => {
             println!("try '{} --help' for more information", APP_NAME);
