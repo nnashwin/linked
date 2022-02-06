@@ -10,6 +10,7 @@ use clap::{arg, App, AppSettings, ArgMatches};
 use copypasta::{ClipboardContext, ClipboardProvider};
 use data::*;
 use dirs::home_dir;
+use itertools::Itertools;
 use std::{
     collections::HashMap,
     fs::{self, File, OpenOptions},
@@ -42,6 +43,10 @@ fn parse_args() -> ArgMatches {
                 )
                 .setting(AppSettings::ArgRequiredElseHelp),
         )
+        .subcommand(
+            App::new("list")
+                .about("lists all abbreviations and links stored in your application")
+        )
         .get_matches();
 
     matches
@@ -59,6 +64,10 @@ fn create_cli_config(cli_dir_name: &str) -> Result<PathBuf> {
     fs::create_dir_all(path.as_path())?;
 
     Ok(path)
+}
+
+fn sanitize_string(str: &str) -> String {
+    str.replace(&['(', ')', '\''], "")
 }
 
 fn run(args: ArgMatches) -> Result<()> {
@@ -86,7 +95,7 @@ fn run(args: ArgMatches) -> Result<()> {
                 return Err(anyhow!("\nlinked add command must be of the following format:\n`$ linked add my-link-abbreviation my-link.com/path`\n"));
             } else {
                 let abbrv = vals[0].to_str().unwrap();
-                let text = vals[1].to_str().unwrap();
+                let text = sanitize_string(vals[1].to_str().unwrap());
                 key_values.insert(abbrv.to_string(), text.to_string());
                 let mut write_f = File::create(&root_dir)
                     .expect("write file stream could not be created for the links file in the cli root directory");
@@ -104,10 +113,16 @@ fn run(args: ArgMatches) -> Result<()> {
                 Some(link) => {
                     let mut ctx = ClipboardContext::new().unwrap();
                     ctx.set_contents(link.to_owned()).unwrap();
-                    println!("the link for '{}': '{}' was saved to your clipboard", abbrev, link);
+                    println!("the link for the abbreviation '{}' ({}) was saved to your clipboard", abbrev, link);
 
                 },
                 _ => println!("no link exists for the abbreviation '{}'\n Check to make sure the abbreviation exists and try again.", &abbrev.to_string()),
+            }
+        }
+        Some(("list", _)) => {
+            println!("Stored Links:\n");
+            for key in key_values.keys().sorted() {
+                println!(" Abbreviation: {}, Link: {}", key, key_values[key]);
             }
         }
         None => {
