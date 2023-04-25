@@ -113,6 +113,9 @@ fn run(args: ArgMatches) -> Result<()> {
                 Some(link) => {
                     let mut ctx = ClipboardContext::new().unwrap();
                     ctx.set_contents(link.to_owned()).unwrap();
+                    // calls an empty get_contents in order to fix error on ubuntu 22.04 where the
+                    // context leaves correct scope and does not copy
+                    ctx.get_contents().unwrap();
                     println!("the link for the abbreviation '{}' ({}) was saved to your clipboard", abbrev, link);
 
                 },
@@ -122,7 +125,7 @@ fn run(args: ArgMatches) -> Result<()> {
         Some(("list", _)) => {
             println!("Stored Links:\n");
             for key in key_values.keys().sorted() {
-                println!(" Abbreviation: {}, Link: {}", key, key_values[key]);
+                println!("{}", key);
             }
         }
         None => {
