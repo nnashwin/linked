@@ -45,6 +45,7 @@ fn parse_args() -> ArgMatches {
         )
         .subcommand(
             App::new("list")
+                .arg(arg!(-f - -full))
                 .about("lists all abbreviations and links stored in your application")
         )
         .get_matches();
@@ -122,10 +123,14 @@ fn run(args: ArgMatches) -> Result<()> {
                 _ => println!("no link exists for the abbreviation '{}'\n Check to make sure the abbreviation exists and try again.", &abbrev.to_string()),
             }
         }
-        Some(("list", _)) => {
+        Some(("list", sub_matches)) => {
+            let should_show_full = sub_matches.is_present("full");
             println!("Stored Links:\n");
             for key in key_values.keys().sorted() {
-                println!("{}", key);
+                match should_show_full {
+                    true => println!(" Abbreviation: {}, Link: {}", key, key_values[key]),
+                    false => println!("{}", key),
+                }
             }
         }
         None => {
